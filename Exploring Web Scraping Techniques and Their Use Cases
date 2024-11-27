@@ -1,0 +1,61 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import time
+
+# Define the URL of the website you want to scrape
+url = "https://example-blog.com"  # Replace this with the actual URL you want to scrape
+
+# Send an HTTP request to the website and get the response
+response = requests.get(url)
+
+# Check if the request was successful (HTTP status code 200)
+if response.status_code == 200:
+    # Parse the page content using BeautifulSoup
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Create empty lists to store data
+    article_titles = []
+    article_links = []
+    publication_dates = []
+
+    # Find all articles on the page (adjust the selector based on the website structure)
+    articles = soup.find_all('article')  # Assuming articles are inside <article> tags
+
+    # Loop through each article and extract the necessary data
+    for article in articles:
+        # Extract the title of the article
+        title_tag = article.find('h2')  # Assuming the title is inside an <h2> tag
+        if title_tag:
+            title = title_tag.get_text(strip=True)
+            article_titles.append(title)
+        
+        # Extract the link to the article (assuming <a> tags inside <article> have href attributes)
+        link_tag = article.find('a', href=True)
+        if link_tag:
+            link = link_tag['href']
+            article_links.append(link)
+        
+        # Extract the publication date (assuming the date is inside a <time> tag)
+        date_tag = article.find('time')
+        if date_tag:
+            date = date_tag.get_text(strip=True)
+            publication_dates.append(date)
+        
+        # Pause between requests to avoid overloading the server
+        time.sleep(1)
+
+    # Create a pandas DataFrame to store the scraped data
+    data = {
+        'Title': article_titles,
+        'Link': article_links,
+        'Publication Date': publication_dates
+    }
+    df = pd.DataFrame(data)
+
+    # Save the data to a CSV file
+    df.to_csv('scraped_articles.csv', index=False)
+
+    print("Scraping completed successfully!")
+else:
+    print(f"Failed to retrieve the page. Status code: {response.status_code}")
